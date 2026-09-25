@@ -11,243 +11,419 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- LOAD CSS ---
+# --- LOAD LIQUID GLASS CSS ---
 def load_css():
     css_path = os.path.join(os.path.dirname(__file__), "assets", "styles.css")
     try:
-        with open(css_path, "r") as f:
+        with open(css_path, "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         st.warning("CSS file not found. Styles may not apply correctly.")
 
 load_css()
 
-# --- HEADER ---
+# --- PRESET BOUNDARIES WITH REAL ATTRIBUTES ---
+PRESETS = {
+    "90 (Critical Min)": {
+        "severity": "Critical",
+        "exploitability": "Easy",
+        "exposure": "Internet-facing",
+        "confidence": "High",
+        "frequency": "Single Event"
+    },
+    "89 (High Max)": {
+        "severity": "High",
+        "exploitability": "Easy",
+        "exposure": "Internet-facing",
+        "confidence": "High",
+        "frequency": "Occasional"
+    },
+    "70 (High Min)": {
+        "severity": "Critical",
+        "exploitability": "Easy",
+        "exposure": "Internet-facing",
+        "confidence": "Low",
+        "frequency": "Single Event"
+    },
+    "69 (Medium Max)": {
+        "severity": "High",
+        "exploitability": "Easy",
+        "exposure": "Internet-facing",
+        "confidence": "Low",
+        "frequency": "Occasional"
+    },
+    "40 (Medium Min)": {
+        "severity": "Critical",
+        "exploitability": "Moderate",
+        "exposure": "Isolated",
+        "confidence": "Low",
+        "frequency": "Single Event"
+    },
+    "39 (Low Max)": {
+        "severity": "High",
+        "exploitability": "Moderate",
+        "exposure": "Isolated",
+        "confidence": "Low",
+        "frequency": "Occasional"
+    },
+    "20 (Low Min)": {
+        "severity": "Informational",
+        "exploitability": "Easy",
+        "exposure": "Isolated",
+        "confidence": "Low",
+        "frequency": "Single Event"
+    },
+    "18 (Info Max)": {
+        "severity": "Low",
+        "exploitability": "Moderate",
+        "exposure": "Isolated",
+        "confidence": "Low",
+        "frequency": "Single Event"
+    },
+    "0 (Absolute Min)": {
+        "severity": "Informational",
+        "exploitability": "Difficult",
+        "exposure": "Isolated",
+        "confidence": "Low",
+        "frequency": "Single Event"
+    }
+}
+
+SEVERITY_OPTIONS = ["Critical", "High", "Medium", "Low", "Informational"]
+EXPLOITABILITY_OPTIONS = ["Easy", "Moderate", "Difficult"]
+EXPOSURE_OPTIONS = ["Internet-facing", "Internal", "Isolated"]
+CONFIDENCE_OPTIONS = ["High", "Medium", "Low"]
+FREQUENCY_OPTIONS = ["Repeated", "Occasional", "Single Event"]
+
+if "param_severity" not in st.session_state:
+    st.session_state.param_severity = "High"
+if "param_exploitability" not in st.session_state:
+    st.session_state.param_exploitability = "Easy"
+if "param_exposure" not in st.session_state:
+    st.session_state.param_exposure = "Internet-facing"
+if "param_confidence" not in st.session_state:
+    st.session_state.param_confidence = "High"
+if "param_frequency" not in st.session_state:
+    st.session_state.param_frequency = "Occasional"
+
+def apply_preset(preset_key: str):
+    preset = PRESETS[preset_key]
+    st.session_state.param_severity = preset["severity"]
+    st.session_state.param_exploitability = preset["exploitability"]
+    st.session_state.param_exposure = preset["exposure"]
+    st.session_state.param_confidence = preset["confidence"]
+    st.session_state.param_frequency = preset["frequency"]
+
+# --- LIQUID HEADER ---
 st.markdown("""
 <div class="status-indicator">
     <div class="status-dot"></div>
-    ANALYZER ONLINE
+    SECURITY ENGINE ONLINE &bull; REAL-TIME TELEMETRY
 </div>
-<div class="title-text cyber-glow">🛡️ Cyber Threat Severity Analyzer</div>
-<div class="subtitle-text">Interactive Python Multi-Condition Cybersecurity Decision Engine</div>
+<div class="title-text">🛡️ Cyber Threat Severity Analyzer</div>
+<div class="subtitle-text">Interactive Multi-Condition Cybersecurity Decision Engine with Liquid Glass UI</div>
 <div>
     <span class="badge">PYTHON 3.11+</span>
-    <span class="badge">STREAMLIT</span>
-    <span class="badge">CLAYMORPHISM UI</span>
+    <span class="badge">LIQUID GLASS UI</span>
+    <span class="badge">DYNAMIC RISK ENGINE</span>
     <span class="badge">IF / ELIF / ELSE</span>
 </div>
 <br>
 """, unsafe_allow_html=True)
 
-# State initialization
-if 'analyzed' not in st.session_state:
-    st.session_state.analyzed = False
-if 'risk_score' not in st.session_state:
-    st.session_state.risk_score = 0
-if 'form_data' not in st.session_state:
-    st.session_state.form_data = {
-        "severity": "High",
-        "exploitability": "Easy",
-        "exposure": "Internet-facing",
-        "confidence": "High",
-        "frequency": "Repeated"
-    }
+# --- 2-COLUMN RESPONSIVE LAYOUT ---
+col_input, col_output = st.columns([1, 1.25], gap="large")
 
-# --- LAYOUT ---
-col1, col2 = st.columns([1, 1.2], gap="large")
-
-with col1:
-    st.markdown('<div class="clay-card">', unsafe_allow_html=True)
-    st.subheader("Security Event Parameters")
-    
-    with st.form("event_form"):
-        severity = st.selectbox(
+# ==========================================
+# 1. USER INPUT SECTION (COL 1)
+# ==========================================
+with col_input:
+    with st.container(border=True):
+        st.markdown("### ⚙️ Security Event Parameters")
+        st.markdown("<p style='color: var(--text-secondary); font-size: 0.9rem;'>Adjust parameters below. All risk scores, condition traces, graphs, and gauges update dynamically.</p>", unsafe_allow_html=True)
+        
+        curr_severity = st.selectbox(
             "Vulnerability Severity",
-            ["Critical", "High", "Medium", "Low", "Informational"],
-            index=1,
-            help="Inherent severity of the vulnerability."
+            SEVERITY_OPTIONS,
+            key="param_severity",
+            help="Inherent severity of the discovered vulnerability (CVSS baseline)."
         )
-        exploitability = st.selectbox(
+        curr_exploitability = st.selectbox(
             "Exploitability",
-            ["Easy", "Moderate", "Difficult"],
-            index=0,
-            help="How easy is it to exploit?"
+            EXPLOITABILITY_OPTIONS,
+            key="param_exploitability",
+            help="Difficulty level required for an attacker to execute an exploit."
         )
-        exposure = st.selectbox(
+        curr_exposure = st.selectbox(
             "Asset Exposure",
-            ["Internet-facing", "Internal", "Isolated"],
-            index=0,
-            help="Where is the vulnerable asset located?"
+            EXPOSURE_OPTIONS,
+            key="param_exposure",
+            help="Network exposure and accessibility of the target system."
         )
-        confidence = st.selectbox(
+        curr_confidence = st.selectbox(
             "Detection Confidence",
-            ["High", "Medium", "Low"],
-            index=0,
-            help="How confident are we in the detection mechanism?"
+            CONFIDENCE_OPTIONS,
+            key="param_confidence",
+            help="Fidelity and reliability of the alerting security telemetry."
         )
-        frequency = st.selectbox(
+        curr_frequency = st.selectbox(
             "Event Frequency",
-            ["Repeated", "Occasional", "Single Event"],
-            index=0,
-            help="How often does this event occur?"
-        )
-        
-        analyze_btn = st.form_submit_button("⚡ ANALYZE THREAT", use_container_width=True)
-        
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Boundary Testing Section
-    st.markdown('<div class="clay-card">', unsafe_allow_html=True)
-    st.subheader("Boundary Testing")
-    st.write("Click a specific score to demonstrate how changing the risk score evaluates `if / elif / else` conditions:")
-    
-    b_col1, b_col2, b_col3, b_col4 = st.columns(4)
-    boundary_scores = [19, 20, 39, 40, 69, 70, 89, 90]
-    
-    for i, b_score in enumerate(boundary_scores):
-        col_idx = i % 4
-        current_col = [b_col1, b_col2, b_col3, b_col4][col_idx]
-        with current_col:
-            if st.button(f"{b_score}", key=f"btn_{b_score}", use_container_width=True):
-                st.session_state.risk_score = b_score
-                st.session_state.analyzed = True
-                st.session_state.form_data["custom"] = True
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# Trigger analysis on form submit or initial view
-if analyze_btn or not st.session_state.analyzed:
-    if analyze_btn:
-        st.session_state.form_data = {
-            "severity": severity,
-            "exploitability": exploitability,
-            "exposure": exposure,
-            "confidence": confidence,
-            "frequency": frequency,
-            "custom": False
-        }
-        st.session_state.risk_score = calculate_risk_score(
-            severity, exploitability, exposure, confidence, frequency
-        )
-    elif not st.session_state.analyzed:
-        # Default initialization
-        st.session_state.analyzed = True
-        st.session_state.risk_score = calculate_risk_score(
-            "High", "Easy", "Internet-facing", "High", "Repeated"
+            FREQUENCY_OPTIONS,
+            key="param_frequency",
+            help="Recurrence cadence of the detected anomaly or attack."
         )
 
-with col2:
-    if st.session_state.analyzed:
-        result = classify_risk(st.session_state.risk_score)
+    with st.container(border=True):
+        st.markdown("### 🎯 Boundary Testing")
+        st.markdown(
+            "<p style='color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 14px;'>"
+            "Click any boundary score to simulate how changing the score triggers each <code>if / elif / else</code> branch:"
+            "</p>",
+            unsafe_allow_html=True
+        )
         
-        # 1. THREAT ASSESSMENT CARD & RISK SCORE GAUGE
-        st.markdown('<div class="clay-card">', unsafe_allow_html=True)
-        st.subheader("THREAT ASSESSMENT")
+        b_rows = [
+            ["90 (Critical Min)", "89 (High Max)"],
+            ["70 (High Min)", "69 (Medium Max)"],
+            ["40 (Medium Min)", "39 (Low Max)"],
+            ["20 (Low Min)", "18 (Info Max)"],
+            ["0 (Absolute Min)"]
+        ]
         
-        color_map = {
-            "CRITICAL": "#ef4444",
-            "HIGH": "#f97316",
-            "MEDIUM": "#eab308",
-            "LOW": "#3b82f6",
-            "INFORMATIONAL": "#6b7280"
-        }
-        sev_color = color_map.get(result["severity"], "#38bdf8")
-        
+        for row in b_rows:
+            cols = st.columns(len(row))
+            for idx, key_name in enumerate(row):
+                with cols[idx]:
+                    st.button(
+                        key_name,
+                        key=f"btn_{key_name}",
+                        on_click=apply_preset,
+                        args=(key_name,),
+                        use_container_width=True
+                    )
+
+# ==========================================
+# 2. CALCULATION & ENGINE EVALUATION
+# ==========================================
+risk_breakdown = calculate_risk_factors(
+    st.session_state.param_severity,
+    st.session_state.param_exploitability,
+    st.session_state.param_exposure,
+    st.session_state.param_confidence,
+    st.session_state.param_frequency
+)
+
+risk_score = min(100, max(0, sum(risk_breakdown.values())))
+result = classify_risk(risk_score)
+severity_level = result["severity"]
+matched_condition = result["matched_condition"]
+
+SEV_COLORS = {
+    "CRITICAL": "#ef4444",
+    "HIGH": "#f97316",
+    "MEDIUM": "#eab308",
+    "LOW": "#38bdf8",
+    "INFORMATIONAL": "#94a3b8"
+}
+active_color = SEV_COLORS.get(severity_level, "#38bdf8")
+
+RECOMMENDATIONS = {
+    "CRITICAL": "Immediate Incident Response - Dispatch SOC Tier 3 & Isolate Host",
+    "HIGH": "High Priority Review - Escalate to Security Analyst within 15 min",
+    "MEDIUM": "Standard Investigation - Correlate SIEM telemetry within 4 hours",
+    "LOW": "Routine Monitoring - Suppress active alerts; log for auditing",
+    "INFORMATIONAL": "Informational Logging - Record baseline; no operator action required"
+}
+
+# ==========================================
+# 3. OUTPUT FLOW (COL 2)
+# ==========================================
+with col_output:
+    # ----------------------------------------------------
+    # FLOW STEP: Threat Severity Card & Risk Score Gauge
+    # ----------------------------------------------------
+    with st.container(border=True):
         st.markdown(f"""
-        <div style="text-align: center; margin: 15px 0;">
-            <div style="font-size: 1.1rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Threat Classification</div>
-            <div style="font-size: 3.2rem; font-weight: 800; color: {sev_color}; text-shadow: 0 0 16px {sev_color}44;">{result['severity']}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase;">Real-Time Assessment</span>
+            <span class="badge" style="margin: 0; color: {active_color}; border-color: {active_color}55;">ACTIVE THREAT LEVEL</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="text-align: center; padding: 6px 0 14px 0;">
+            <div style="font-size: 0.95rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.12em; font-family: 'JetBrains Mono', monospace;">Threat Classification</div>
+            <div style="font-size: 3.4rem; font-weight: 800; color: {active_color}; text-shadow: 0 0 24px {active_color}55; letter-spacing: -0.02em; line-height: 1.15; margin: 4px 0 10px 0;">
+                {severity_level}
+            </div>
+            <div style="display: inline-block; padding: 6px 16px; border-radius: 9999px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: #e2e8f0;">
+                Matched Rule: <code style="color: {active_color}; font-weight: 700;">{matched_condition}</code>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="padding: 12px 16px; border-radius: 12px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.9rem; margin-bottom: 16px;">
+            <span style="color: #94a3b8; font-weight: 600;">Recommended Action:</span><br>
+            <span style="color: #f8fafc; font-weight: 500;">{RECOMMENDATIONS.get(severity_level)}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Risk Score Gauge Visual
+        st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+            <span style="font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em;">Cyber Risk Score Gauge</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 800; color: {active_color};">
+                {risk_score} <span style="font-size: 0.9rem; color: #64748b; font-weight: 500;">/ 100</span>
+            </span>
         </div>
         """, unsafe_allow_html=True)
         
-        rec_map = {
-            "CRITICAL": "Immediate Incident Response",
-            "HIGH": "Immediate Review",
-            "MEDIUM": "Normal Investigation",
-            "LOW": "Monitor",
-            "INFORMATIONAL": "Log and Ignore"
-        }
+        st.progress(risk_score / 100.0)
+
+        # Dynamic horizontal ruler indicator: 0 ──────────────── 100
+        safe_score_pct = max(0, min(100, risk_score))
+        st.markdown(f"""
+        <div class="gauge-axis-track">
+            <div class="gauge-marker-pin" style="left: {safe_score_pct}%; color: {active_color};">
+                ▲ {risk_score}
+            </div>
+        </div>
+        <div class="gauge-ruler">
+            <span>0 (SAFE)</span>
+            <span>20 (LOW)</span>
+            <span>40 (MED)</span>
+            <span>70 (HIGH)</span>
+            <span>100 (CRIT)</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Second Visualization: Final Risk Level Stepper with Dynamic Indicator
+        stepper_levels = [
+            ("INFORMATIONAL", "0-19", "active-informational"),
+            ("LOW", "20-39", "active-low"),
+            ("MEDIUM", "40-69", "active-medium"),
+            ("HIGH", "70-89", "active-high"),
+            ("CRITICAL", "90-100", "active-critical")
+        ]
         
-        # Risk Score Gauge Visual
-        st.markdown(f"### Cyber Risk Score: **{result['score']} / 100**")
-        st.progress(result['score'] / 100.0)
+        level_indices = {"INFORMATIONAL": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+        active_idx = level_indices.get(severity_level, 0)
+        pointer_pos_pct = 10 + (active_idx * 20)
+
+        stepper_html = '<div class="risk-stepper-container">'
+        stepper_html += '<div style="font-family: \'JetBrains Mono\', monospace; font-size: 0.75rem; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Risk Level Track</div>'
+        stepper_html += '<div class="risk-stepper-track">'
+        for lvl_name, lvl_range, active_cls in stepper_levels:
+            is_cur = (lvl_name == severity_level)
+            cls = f"stepper-node {active_cls}" if is_cur else "stepper-node"
+            stepper_html += f'<div class="{cls}">{lvl_name}<br><span style="font-size: 0.65rem; opacity: 0.7;">{lvl_range}</span></div>'
+        stepper_html += '</div>'
         
-        col_meta1, col_meta2 = st.columns(2)
-        with col_meta1:
-            st.write(f"**Recommended Priority:** {rec_map.get(result['severity'])}")
-        with col_meta2:
-            st.write(f"**Matched Condition:** `{result['matched_condition']}`")
-            
-        # Stepper Visualization for Level
-        levels = ["INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"]
-        stepper_html = '<div class="level-stepper">'
-        for lvl in levels:
-            is_active = (lvl == result["severity"])
-            active_class = "active" if is_active else ""
-            pointer = f'<span class="level-pointer" style="color: {sev_color};">▲ SCORE {result["score"]}</span>' if is_active else ''
-            stepper_html += f'<div class="level-step {active_class}">{lvl}{pointer}</div>'
+        stepper_html += f"""
+        <div class="stepper-pointer-row">
+            <div class="stepper-pointer" style="left: {pointer_pos_pct}%; color: {active_color};">
+                <span class="stepper-arrow">▲</span>
+                <span>SCORE {risk_score} &bull; {severity_level}</span>
+            </div>
+        </div>
+        """
         stepper_html += '</div>'
         st.markdown(stepper_html, unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # 2. CONDITION TRACE
-        st.markdown('<div class="clay-card">', unsafe_allow_html=True)
-        st.subheader("CONDITION ANALYSIS")
+
+    # ----------------------------------------------------
+    # FLOW STEP: Condition Trace
+    # ----------------------------------------------------
+    with st.container(border=True):
+        st.markdown("### 🔍 Condition Trace")
+        st.markdown("<p style='color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 12px;'>Step-by-step sequential evaluation of the Python multi-condition tree:</p>", unsafe_allow_html=True)
         
         for cond in result["conditions"]:
             st.markdown(f"""
             <div class="trace-item {cond['class']}">
-                {cond['symbol']} {cond['status']} : <code>{cond['text']}</code>
+                <span style="font-weight: 700; width: 140px; display: inline-block;">{cond['symbol']} {cond['status']}</span>
+                <span><code>{cond['text']}</code></span>
             </div>
             """, unsafe_allow_html=True)
             
         st.markdown(f"""
-        <div style="margin-top: 14px; padding: 12px 16px; border-left: 4px solid #38bdf8; background: rgba(56,189,248,0.06); border-radius: 8px;">
-            <strong>Why was this severity selected?</strong><br>
+        <div class="explanation-callout">
+            <div style="font-weight: 700; margin-bottom: 6px; color: var(--cyber-cyan);">💡 Why was this severity selected?</div>
             {result['explanation'].replace(chr(10), '<br>')}
         </div>
         """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # 3. RISK FACTOR ANALYSIS (BAR CHART GRAPH & BREAKDOWN)
-        st.markdown('<div class="clay-card">', unsafe_allow_html=True)
-        st.subheader("RISK FACTOR ANALYSIS")
-        
-        if not st.session_state.form_data.get("custom"):
-            fd = st.session_state.form_data
-            factors = calculate_risk_factors(
-                fd['severity'], fd['exploitability'], fd['exposure'], fd['confidence'], fd['frequency']
-            )
-            
-            # Interactive Bar Chart using Streamlit Native Charts
-            df_chart = pd.DataFrame(
-                list(factors.items()),
-                columns=["Risk Factor", "Score Contribution"]
-            ).set_index("Risk Factor")
-            
-            st.bar_chart(df_chart, color="#38bdf8", height=220)
-            
-            # Breakdown Table
-            st.markdown('<div class="breakdown-divider"></div>', unsafe_allow_html=True)
-            for factor, val in factors.items():
-                st.markdown(f'<div class="breakdown-row"><span>{factor}</span> <span>+{val}</span></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="total-row"><span>Total Risk Score</span> <span>{result["score"]} / 100</span></div>', unsafe_allow_html=True)
-        else:
-            st.info("Boundary test active. Select parameters in the event form to view individual factor scores.")
-            st.markdown(f'<div class="total-row"><span>Boundary Test Score</span> <span>{result["score"]} / 100</span></div>', unsafe_allow_html=True)
-            
-        st.markdown('</div>', unsafe_allow_html=True)
 
-# --- LEARNING & PYTHON LOGIC SECTION ---
-st.markdown("---")
-col3, col4 = st.columns(2, gap="large")
+    # ----------------------------------------------------
+    # FLOW STEP: Risk Factor Analysis (Interactive Graph & Card)
+    # ----------------------------------------------------
+    with st.container(border=True):
+        st.markdown("""
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 1.25rem;">📊 Risk Factor Analysis</h3>
+            <span class="badge" style="margin: 0;">DYNAMIC TELEMETRY</span>
+        </div>
+        <p style='color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 16px;'>
+            Interactive breakdown of each parameter's contribution to the total calculated risk score:
+        </p>
+        """, unsafe_allow_html=True)
 
-with col3:
-    st.markdown('<div class="clay-card">', unsafe_allow_html=True)
-    st.subheader("PYTHON LOGIC")
-    
-    code = '''if risk_score >= 90:
+        df_chart = pd.DataFrame({
+            "Contribution": list(risk_breakdown.values()),
+            "Factor": list(risk_breakdown.keys())
+        })
+
+        st.bar_chart(
+            data=df_chart,
+            x="Contribution",
+            y="Factor",
+            horizontal=True,
+            color="#06b6d4",
+            height=240
+        )
+
+        max_weights = {
+            "Vulnerability Severity": 30,
+            "Exploitability": 20,
+            "Asset Exposure": 20,
+            "Detection Confidence": 20,
+            "Event Frequency": 10
+        }
+
+        for factor_name, factor_score in risk_breakdown.items():
+            max_w = max_weights.get(factor_name, 30)
+            pct_of_total = f"{(factor_score / risk_score * 100):.0f}% of total" if risk_score > 0 else "0%"
+            st.markdown(f"""
+            <div class="breakdown-row">
+                <span>
+                    <strong style="color: #f1f5f9;">{factor_name}</strong>
+                    <span style="font-size: 0.78rem; color: #64748b; margin-left: 8px;">(max {max_w})</span>
+                </span>
+                <span>
+                    <span style="font-size: 0.8rem; color: #94a3b8; margin-right: 10px;">{pct_of_total}</span>
+                    <span class="breakdown-val">+{factor_score}</span>
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div class="card-footer-total">
+            <span>Total Risk Score</span>
+            <span>{risk_score} / 100</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+# ==========================================
+# 4. PYTHON LOGIC & EXPLANATION (FOOTER)
+# ==========================================
+st.markdown("<hr style='border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 30px 0 24px 0;'>", unsafe_allow_html=True)
+col_code, col_learn = st.columns(2, gap="large")
+
+with col_code:
+    with st.container(border=True):
+        st.markdown("### 🐍 Python Multi-Condition Logic")
+        st.markdown("<p style='color: var(--text-secondary); font-size: 0.88rem;'>Production rule evaluation implementation in Python:</p>", unsafe_allow_html=True)
+        
+        code = '''if risk_score >= 90:
     severity = "CRITICAL"
 elif risk_score >= 70:
     severity = "HIGH"
@@ -257,22 +433,20 @@ elif risk_score >= 20:
     severity = "LOW"
 else:
     severity = "INFORMATIONAL"'''
-    st.code(code, language="python")
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.code(code, language="python")
 
-with col4:
-    st.markdown('<div class="clay-card">', unsafe_allow_html=True)
-    st.subheader("UNDERSTANDING PYTHON DECISION FLOW")
-    st.markdown("""
-    * **`if`**: Evaluated first. If `True`, its body executes and evaluation stops immediately.
-    * **`elif`**: Evaluated sequentially **only** if all prior conditions were `False`.
-    * **`else`**: Executes as the default fallback when every previous condition evaluates to `False`.
-    
-    **Cybersecurity Action Mapping:**
-    - **CRITICAL** (≥ 90): Immediate Incident Response
-    - **HIGH** (≥ 70): Immediate Review
-    - **MEDIUM** (≥ 40): Normal Investigation
-    - **LOW** (≥ 20): Monitor
-    - **INFORMATIONAL** (< 20): Log and Ignore
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
+with col_learn:
+    with st.container(border=True):
+        st.markdown("### 🧠 How Python Evaluates Branches")
+        st.markdown("""
+        * **`if`**: The initial condition branch. If it evaluates to `True`, Python executes its block and immediately skips all subsequent branches.
+        * **`elif`** (Else If): Evaluated sequentially **only** if all prior branches evaluated to `False`. Multiple `elif` clauses can be chained for granular tiering.
+        * **`else`**: The catch-all default fallback. It executes if and only if **all** prior `if` and `elif` checks evaluated to `False`.
+        
+        **Cybersecurity Operational Mapping:**
+        * **CRITICAL** (Score ≥ 90) &rarr; Active containment, emergency paging, host isolation.
+        * **HIGH** (Score ≥ 70) &rarr; SOC priority queue, triage within 15 minutes.
+        * **MEDIUM** (Score ≥ 40) &rarr; Correlation with endpoint logs within 4 hours.
+        * **LOW** (Score ≥ 20) &rarr; Automated heuristic monitoring; ticket logged.
+        * **INFORMATIONAL** (Score &lt; 20) &rarr; Event recorded for compliance and threat hunting baselines.
+        """)
