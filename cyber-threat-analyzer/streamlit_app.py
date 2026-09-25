@@ -1,6 +1,7 @@
 import streamlit as st
-from src.risk_engine import calculate_risk_score, classify_risk
+import pandas as pd
 import os
+from src.risk_engine import calculate_risk_score, calculate_risk_factors, classify_risk
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -30,9 +31,9 @@ st.markdown("""
 <div class="title-text cyber-glow">🛡️ Cyber Threat Severity Analyzer</div>
 <div class="subtitle-text">Interactive Python Multi-Condition Cybersecurity Decision Engine</div>
 <div>
-    <span class="badge">PYTHON</span>
+    <span class="badge">PYTHON 3.11+</span>
     <span class="badge">STREAMLIT</span>
-    <span class="badge">CYBERSECURITY</span>
+    <span class="badge">CLAYMORPHISM UI</span>
     <span class="badge">IF / ELIF / ELSE</span>
 </div>
 <br>
@@ -44,40 +45,50 @@ if 'analyzed' not in st.session_state:
 if 'risk_score' not in st.session_state:
     st.session_state.risk_score = 0
 if 'form_data' not in st.session_state:
-    st.session_state.form_data = {}
+    st.session_state.form_data = {
+        "severity": "High",
+        "exploitability": "Easy",
+        "exposure": "Internet-facing",
+        "confidence": "High",
+        "frequency": "Repeated"
+    }
 
 # --- LAYOUT ---
-# Mobile auto-stacks, Desktop uses columns
 col1, col2 = st.columns([1, 1.2], gap="large")
 
 with col1:
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="clay-card">', unsafe_allow_html=True)
     st.subheader("Security Event Parameters")
     
     with st.form("event_form"):
         severity = st.selectbox(
             "Vulnerability Severity",
             ["Critical", "High", "Medium", "Low", "Informational"],
+            index=1,
             help="Inherent severity of the vulnerability."
         )
         exploitability = st.selectbox(
             "Exploitability",
             ["Easy", "Moderate", "Difficult"],
+            index=0,
             help="How easy is it to exploit?"
         )
         exposure = st.selectbox(
             "Asset Exposure",
             ["Internet-facing", "Internal", "Isolated"],
+            index=0,
             help="Where is the vulnerable asset located?"
         )
         confidence = st.selectbox(
             "Detection Confidence",
             ["High", "Medium", "Low"],
+            index=0,
             help="How confident are we in the detection mechanism?"
         )
         frequency = st.selectbox(
             "Event Frequency",
             ["Repeated", "Occasional", "Single Event"],
+            index=0,
             help="How often does this event occur?"
         )
         
@@ -86,9 +97,9 @@ with col1:
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Boundary Testing Section
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="clay-card">', unsafe_allow_html=True)
     st.subheader("Boundary Testing")
-    st.write("Click a specific score to demonstrate how changing the risk score changes the if/elif/else result.")
+    st.write("Click a specific score to demonstrate how changing the risk score evaluates `if / elif / else` conditions:")
     
     b_col1, b_col2, b_col3, b_col4 = st.columns(4)
     boundary_scores = [19, 20, 39, 40, 69, 70, 89, 90]
@@ -100,48 +111,55 @@ with col1:
             if st.button(f"{b_score}", key=f"btn_{b_score}", use_container_width=True):
                 st.session_state.risk_score = b_score
                 st.session_state.analyzed = True
-                st.session_state.form_data = {"custom": True} # Flag for custom boundary test
+                st.session_state.form_data["custom"] = True
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-if analyze_btn:
-    st.session_state.analyzed = True
-    st.session_state.form_data = {
-        "severity": severity,
-        "exploitability": exploitability,
-        "exposure": exposure,
-        "confidence": confidence,
-        "frequency": frequency
-    }
-    st.session_state.risk_score = calculate_risk_score(
-        severity, exploitability, exposure, confidence, frequency
-    )
+# Trigger analysis on form submit or initial view
+if analyze_btn or not st.session_state.analyzed:
+    if analyze_btn:
+        st.session_state.form_data = {
+            "severity": severity,
+            "exploitability": exploitability,
+            "exposure": exposure,
+            "confidence": confidence,
+            "frequency": frequency,
+            "custom": False
+        }
+        st.session_state.risk_score = calculate_risk_score(
+            severity, exploitability, exposure, confidence, frequency
+        )
+    elif not st.session_state.analyzed:
+        # Default initialization
+        st.session_state.analyzed = True
+        st.session_state.risk_score = calculate_risk_score(
+            "High", "Easy", "Internet-facing", "High", "Repeated"
+        )
 
 with col2:
     if st.session_state.analyzed:
         result = classify_risk(st.session_state.risk_score)
         
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        st.subheader("Threat Assessment")
+        # 1. THREAT ASSESSMENT CARD & RISK SCORE GAUGE
+        st.markdown('<div class="clay-card">', unsafe_allow_html=True)
+        st.subheader("THREAT ASSESSMENT")
         
-        # Color mapping for severity
         color_map = {
-            "CRITICAL": "#ef4444", # Red
-            "HIGH": "#f97316",     # Orange
-            "MEDIUM": "#eab308",   # Yellow
-            "LOW": "#3b82f6",      # Blue
-            "INFORMATIONAL": "#6b7280" # Gray
+            "CRITICAL": "#ef4444",
+            "HIGH": "#f97316",
+            "MEDIUM": "#eab308",
+            "LOW": "#3b82f6",
+            "INFORMATIONAL": "#6b7280"
         }
-        sev_color = color_map.get(result["severity"], "#ffffff")
+        sev_color = color_map.get(result["severity"], "#38bdf8")
         
         st.markdown(f"""
-        <div style="text-align: center; margin: 20px 0;">
-            <div style="font-size: 1.2rem; color: var(--text-color); opacity: 0.7; text-transform: uppercase;">Severity Level</div>
-            <div style="font-size: 3.5rem; font-weight: 800; color: {sev_color}; letter-spacing: 2px;">{result['severity']}</div>
+        <div style="text-align: center; margin: 15px 0;">
+            <div style="font-size: 1.1rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Threat Classification</div>
+            <div style="font-size: 3.2rem; font-weight: 800; color: {sev_color}; text-shadow: 0 0 16px {sev_color}44;">{result['severity']}</div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Recommendations mapping
         rec_map = {
             "CRITICAL": "Immediate Incident Response",
             "HIGH": "Immediate Review",
@@ -150,16 +168,32 @@ with col2:
             "INFORMATIONAL": "Log and Ignore"
         }
         
-        st.metric("Cyber Risk Score", f"{result['score']} / 100")
+        # Risk Score Gauge Visual
+        st.markdown(f"### Cyber Risk Score: **{result['score']} / 100**")
         st.progress(result['score'] / 100.0)
-        st.write(f"**Recommended Priority:** {rec_map.get(result['severity'])}")
-        st.write(f"**Matched Condition:** `{result['matched_condition']}`")
+        
+        col_meta1, col_meta2 = st.columns(2)
+        with col_meta1:
+            st.write(f"**Recommended Priority:** {rec_map.get(result['severity'])}")
+        with col_meta2:
+            st.write(f"**Matched Condition:** `{result['matched_condition']}`")
+            
+        # Stepper Visualization for Level
+        levels = ["INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"]
+        stepper_html = '<div class="level-stepper">'
+        for lvl in levels:
+            is_active = (lvl == result["severity"])
+            active_class = "active" if is_active else ""
+            pointer = f'<span class="level-pointer" style="color: {sev_color};">▲ SCORE {result["score"]}</span>' if is_active else ''
+            stepper_html += f'<div class="level-step {active_class}">{lvl}{pointer}</div>'
+        stepper_html += '</div>'
+        st.markdown(stepper_html, unsafe_allow_html=True)
+        
         st.markdown('</div>', unsafe_allow_html=True)
         
-        
-        # Condition Trace
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        st.subheader("Condition Trace")
+        # 2. CONDITION TRACE
+        st.markdown('<div class="clay-card">', unsafe_allow_html=True)
+        st.subheader("CONDITION ANALYSIS")
         
         for cond in result["conditions"]:
             st.markdown(f"""
@@ -169,52 +203,51 @@ with col2:
             """, unsafe_allow_html=True)
             
         st.markdown(f"""
-        <div style="margin-top: 16px; padding: 12px; border-left: 3px solid var(--primary-color); background: color-mix(in srgb, var(--primary-color) 10%, transparent);">
+        <div style="margin-top: 14px; padding: 12px 16px; border-left: 4px solid #38bdf8; background: rgba(56,189,248,0.06); border-radius: 8px;">
             <strong>Why was this severity selected?</strong><br>
             {result['explanation'].replace(chr(10), '<br>')}
         </div>
         """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Breakdown (only show if not from boundary test)
+        # 3. RISK FACTOR ANALYSIS (BAR CHART GRAPH & BREAKDOWN)
+        st.markdown('<div class="clay-card">', unsafe_allow_html=True)
+        st.subheader("RISK FACTOR ANALYSIS")
+        
         if not st.session_state.form_data.get("custom"):
             fd = st.session_state.form_data
+            factors = calculate_risk_factors(
+                fd['severity'], fd['exploitability'], fd['exposure'], fd['confidence'], fd['frequency']
+            )
             
-            # Map factors to their scores for display
-            s_val = {"Critical": 30, "High": 24, "Medium": 16, "Low": 8, "Informational": 0}.get(fd['severity'], 0)
-            ex_val = {"Easy": 20, "Moderate": 10, "Difficult": 0}.get(fd['exploitability'], 0)
-            ast_val = {"Internet-facing": 20, "Internal": 10, "Isolated": 0}.get(fd['exposure'], 0)
-            conf_val = {"High": 20, "Medium": 10, "Low": 0}.get(fd['confidence'], 0)
-            freq_val = {"Repeated": 10, "Occasional": 5, "Single Event": 0}.get(fd['frequency'], 0)
+            # Interactive Bar Chart using Streamlit Native Charts
+            df_chart = pd.DataFrame(
+                list(factors.items()),
+                columns=["Risk Factor", "Score Contribution"]
+            ).set_index("Risk Factor")
             
-            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-            st.subheader("Risk Score Breakdown")
-            st.markdown(f"""
-            <div class="breakdown-row"><span>Vulnerability Severity ({fd['severity']})</span> <span>+{s_val}</span></div>
-            <div class="breakdown-row"><span>Exploitability ({fd['exploitability']})</span> <span>+{ex_val}</span></div>
-            <div class="breakdown-row"><span>Asset Exposure ({fd['exposure']})</span> <span>+{ast_val}</span></div>
-            <div class="breakdown-row"><span>Detection Confidence ({fd['confidence']})</span> <span>+{conf_val}</span></div>
-            <div class="breakdown-row"><span>Event Frequency ({fd['frequency']})</span> <span>+{freq_val}</span></div>
-            <div class="breakdown-divider"></div>
-            <div class="total-row"><span>Total Risk Score</span> <span>{result['score']}</span></div>
-            """, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.bar_chart(df_chart, color="#38bdf8", height=220)
             
-    else:
-        st.markdown('<div class="glass-card" style="text-align: center; color: var(--text-color); opacity: 0.7; padding: 40px;">', unsafe_allow_html=True)
-        st.write("👈 Configure event parameters and click **ANALYZE THREAT** to begin.")
+            # Breakdown Table
+            st.markdown('<div class="breakdown-divider"></div>', unsafe_allow_html=True)
+            for factor, val in factors.items():
+                st.markdown(f'<div class="breakdown-row"><span>{factor}</span> <span>+{val}</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="total-row"><span>Total Risk Score</span> <span>{result["score"]} / 100</span></div>', unsafe_allow_html=True)
+        else:
+            st.info("Boundary test active. Select parameters in the event form to view individual factor scores.")
+            st.markdown(f'<div class="total-row"><span>Boundary Test Score</span> <span>{result["score"]} / 100</span></div>', unsafe_allow_html=True)
+            
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- LEARNING & CODE SECTION ---
+# --- LEARNING & PYTHON LOGIC SECTION ---
 st.markdown("---")
-col3, col4 = st.columns(2)
+col3, col4 = st.columns(2, gap="large")
 
 with col3:
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.subheader("Python Logic")
+    st.markdown('<div class="clay-card">', unsafe_allow_html=True)
+    st.subheader("PYTHON LOGIC")
     
-    code = '''
-if risk_score >= 90:
+    code = '''if risk_score >= 90:
     severity = "CRITICAL"
 elif risk_score >= 70:
     severity = "HIGH"
@@ -223,24 +256,23 @@ elif risk_score >= 40:
 elif risk_score >= 20:
     severity = "LOW"
 else:
-    severity = "INFORMATIONAL"
-'''
+    severity = "INFORMATIONAL"'''
     st.code(code, language="python")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col4:
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.subheader("Understanding Python Decision Flow")
+    st.markdown('<div class="clay-card">', unsafe_allow_html=True)
+    st.subheader("UNDERSTANDING PYTHON DECISION FLOW")
     st.markdown("""
-    * **`if`**: The first condition is checked. If it evaluates to `True`, its block executes, and the rest are skipped.
-    * **`elif`** (Else If): Checked *only* when the previous condition(s) evaluate to `False`. It provides alternative conditions.
-    * **`else`**: Runs automatically when *all* previous `if` and `elif` conditions evaluate to `False`. It acts as the default fallback.
+    * **`if`**: Evaluated first. If `True`, its body executes and evaluation stops immediately.
+    * **`elif`**: Evaluated sequentially **only** if all prior conditions were `False`.
+    * **`else`**: Executes as the default fallback when every previous condition evaluates to `False`.
     
-    **Cybersecurity Example Context:**
-    * If risk is Critical → immediate incident response
-    * Else if risk is High → high-priority review
-    * Else if risk is Medium → normal investigation
-    * Else if risk is Low → monitor
-    * Else → log and ignore (informational)
+    **Cybersecurity Action Mapping:**
+    - **CRITICAL** (≥ 90): Immediate Incident Response
+    - **HIGH** (≥ 70): Immediate Review
+    - **MEDIUM** (≥ 40): Normal Investigation
+    - **LOW** (≥ 20): Monitor
+    - **INFORMATIONAL** (< 20): Log and Ignore
     """)
     st.markdown('</div>', unsafe_allow_html=True)

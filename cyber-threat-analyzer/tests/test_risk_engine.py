@@ -1,5 +1,5 @@
 import unittest
-from src.risk_engine import calculate_risk_score, classify_risk
+from src.risk_engine import calculate_risk_score, classify_risk, calculate_risk_factors
 
 class TestRiskEngine(unittest.TestCase):
 
@@ -36,6 +36,21 @@ class TestRiskEngine(unittest.TestCase):
         )
         self.assertEqual(score, 100)
         
+    def test_calculate_risk_factors(self):
+        breakdown = calculate_risk_factors(
+            severity="Critical",
+            exploitability="Easy",
+            exposure="Internet-facing",
+            confidence="High",
+            frequency="Repeated"
+        )
+        self.assertEqual(breakdown["Vulnerability Severity"], 30)
+        self.assertEqual(breakdown["Exploitability"], 20)
+        self.assertEqual(breakdown["Asset Exposure"], 20)
+        self.assertEqual(breakdown["Detection Confidence"], 20)
+        self.assertEqual(breakdown["Event Frequency"], 10)
+        self.assertEqual(sum(breakdown.values()), 100)
+
     def test_calculate_risk_score_min(self):
         score = calculate_risk_score(
             severity="Informational",

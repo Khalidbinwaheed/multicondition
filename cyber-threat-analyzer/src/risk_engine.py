@@ -1,3 +1,62 @@
+SEVERITY_WEIGHTS = {
+    "Critical": 30,
+    "High": 24,
+    "Medium": 16,
+    "Low": 8,
+    "Informational": 0
+}
+
+EXPLOITABILITY_WEIGHTS = {
+    "Easy": 20,
+    "Moderate": 10,
+    "Difficult": 0
+}
+
+EXPOSURE_WEIGHTS = {
+    "Internet-facing": 20,
+    "Internal": 10,
+    "Isolated": 0
+}
+
+CONFIDENCE_WEIGHTS = {
+    "High": 20,
+    "Medium": 10,
+    "Low": 0
+}
+
+FREQUENCY_WEIGHTS = {
+    "Repeated": 10,
+    "Occasional": 5,
+    "Single Event": 0
+}
+
+
+def calculate_risk_factors(
+    severity: str,
+    exploitability: str,
+    exposure: str,
+    confidence: str,
+    frequency: str
+) -> dict:
+    """
+    Calculates the individual contribution of each security parameter to the total risk score.
+    Returns a dictionary of factor names and their integer score contributions.
+    """
+    severity_score = SEVERITY_WEIGHTS.get(severity, 0)
+    exploitability_score = EXPLOITABILITY_WEIGHTS.get(exploitability, 0)
+    exposure_score = EXPOSURE_WEIGHTS.get(exposure, 0)
+    confidence_score = CONFIDENCE_WEIGHTS.get(confidence, 0)
+    frequency_score = FREQUENCY_WEIGHTS.get(frequency, 0)
+
+    return {
+        "Vulnerability Severity": severity_score,
+        "Exploitability": exploitability_score,
+        "Asset Exposure": exposure_score,
+        "Detection Confidence": confidence_score,
+        "Event Frequency": frequency_score
+    }
+
+
 def calculate_risk_score(
     severity: str,
     exploitability: str,
@@ -8,52 +67,10 @@ def calculate_risk_score(
     """
     Calculates a deterministic educational risk score based on provided factors.
     """
-    score = 0
-    
-    # Severity weighting
-    if severity == "Critical":
-        score += 30
-    elif severity == "High":
-        score += 24
-    elif severity == "Medium":
-        score += 16
-    elif severity == "Low":
-        score += 8
-    else: # Informational
-        score += 0
-        
-    # Exploitability weighting
-    if exploitability == "Easy":
-        score += 20
-    elif exploitability == "Moderate":
-        score += 10
-    else: # Difficult
-        score += 0
-        
-    # Asset Exposure weighting
-    if exposure == "Internet-facing":
-        score += 20
-    elif exposure == "Internal":
-        score += 10
-    else: # Isolated
-        score += 0
-        
-    # Detection Confidence weighting
-    if confidence == "High":
-        score += 20
-    elif confidence == "Medium":
-        score += 10
-    else: # Low
-        score += 0
-        
-    # Event Frequency weighting
-    if frequency == "Repeated":
-        score += 10
-    elif frequency == "Occasional":
-        score += 5
-    else: # Single Event
-        score += 0
-        
+    breakdown = calculate_risk_factors(
+        severity, exploitability, exposure, confidence, frequency
+    )
+    score = sum(breakdown.values())
     return min(100, max(0, score))
 
 
