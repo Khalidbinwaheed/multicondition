@@ -136,7 +136,7 @@ with col2:
         
         st.markdown(f"""
         <div style="text-align: center; margin: 20px 0;">
-            <div style="font-size: 1.2rem; color: #94a3b8; text-transform: uppercase;">Severity Level</div>
+            <div style="font-size: 1.2rem; color: var(--text-color); opacity: 0.7; text-transform: uppercase;">Severity Level</div>
             <div style="font-size: 3.5rem; font-weight: 800; color: {sev_color}; letter-spacing: 2px;">{result['severity']}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -169,7 +169,7 @@ with col2:
             """, unsafe_allow_html=True)
             
         st.markdown(f"""
-        <div style="margin-top: 16px; padding: 12px; border-left: 3px solid #38bdf8; background: rgba(56,189,248,0.1);">
+        <div style="margin-top: 16px; padding: 12px; border-left: 3px solid var(--primary-color); background: color-mix(in srgb, var(--primary-color) 10%, transparent);">
             <strong>Why was this severity selected?</strong><br>
             {result['explanation'].replace(chr(10), '<br>')}
         </div>
@@ -201,7 +201,7 @@ with col2:
             st.markdown('</div>', unsafe_allow_html=True)
             
     else:
-        st.markdown('<div class="glass-card" style="text-align: center; color: #94a3b8; padding: 40px;">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card" style="text-align: center; color: var(--text-color); opacity: 0.7; padding: 40px;">', unsafe_allow_html=True)
         st.write("👈 Configure event parameters and click **ANALYZE THREAT** to begin.")
         st.markdown('</div>', unsafe_allow_html=True)
 
