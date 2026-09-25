@@ -24,7 +24,7 @@ Users input details about a potential security event, which are converted into a
 ## 🏗️ Architecture
 ```
 cyber-threat-analyzer/
-├── app.py                      # Main Streamlit application
+├── streamlit_app.py            # Main Streamlit application
 ├── requirements.txt            # Project dependencies
 ├── README.md                   # Documentation
 ├── src/                        
@@ -59,14 +59,14 @@ cyber-threat-analyzer/
 
 4. **Run the application:**
    ```bash
-   streamlit run app.py
+   streamlit run streamlit_app.py
    ```
 
 ## ☁️ Streamlit Cloud Deployment
 This project is fully ready for deployment on **Streamlit Community Cloud**:
 1. Push this repository to GitHub.
 2. Log in to [Streamlit Community Cloud](https://share.streamlit.io/).
-3. Click **New App**, select your repository, branch, and specify `app.py` as the Main file path.
+3. Click **New App**, select your repository, branch, and specify `streamlit_app.py` as the Main file path.
 4. Click **Deploy**. No API keys or environment variables are required!
 
 ## 🔐 Cybersecurity Scope
